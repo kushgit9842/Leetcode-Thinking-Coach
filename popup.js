@@ -15,7 +15,7 @@
 // ════════════════════════════════════════════════════════════
 const State = {
   problemData: null,   // Extracted from LeetCode page
-  hints: null,   // Cached { direction, approach, what_next, debug, edge_cases }
+  hints: null,   // Cached { direction, approach, what_next, debug, edge_cases}
   hintLevel: 0,      // 0 = none shown, 1-4 = progressive
   isDarkMode: false,
   isLoading: false,
@@ -128,24 +128,57 @@ function handleExtractResponse(response) {
   setStatus("ready", "Problem detected");
   // Last resort: document title (e.g. "Two Sum - LeetCode")
   DOM.getHintBtn.disabled = false;
+
+  DOM.notLeetcode.classList.add("hidden");
+  DOM.appView.classList.remove("hidden");
+
+  restoreProblemState();
 }
 
 // ── Tab Listeners for Side Panel ───────────────────────────
+let currentProblemUrl = "";
+
 function setupTabListeners() {
-  chrome.tabs.onActivated.addListener(async () => {
-    resetAllState();
-    await initPage();
+  chrome.tabs.onActivated.addListener(async (activeInfo) => {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    if (tab && tab.url) handleTabChange(tab.url);
   });
 
   chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && tab.active) {
-      resetAllState();
-      await initPage();
+    if (tab.active) {
+      if (changeInfo.url) {
+        handleTabChange(changeInfo.url);
+      } else if (changeInfo.status === 'complete') {
+        if (tab.url) handleTabChange(tab.url, true);
+      }
     }
   });
 }
 
+function handleTabChange(newUrl, isCompleteEvent = false) {
+  if (!newUrl.includes("leetcode.com/problems/")) {
+    if (State.problemData) {
+      resetAllState();
+      DOM.appView.classList.add("hidden");
+      DOM.notLeetcode.classList.remove("hidden");
+    }
+    return;
+  }
+
+  const match = newUrl.match(/(https:\/\/leetcode\.com\/problems\/[^\/?#]+)/);
+  const baseUrl = match ? match[1] : newUrl;
+
+  if (currentProblemUrl !== baseUrl) {
+    currentProblemUrl = baseUrl;
+    resetAllState();
+    initPage();
+  } else if (isCompleteEvent && !State.problemData) {
+    initPage();
+  }
+}
+
 function resetAllState() {
+  hasRestoredState = false;
   State.problemData = null;
   State.chatHistory = [];
 
@@ -218,7 +251,10 @@ function setStatus(state, text) {
 // ════════════════════════════════════════════════════════════
 function setupHintButtons() {
   DOM.getHintBtn.addEventListener("click", onGetHint);
-  DOM.resetHintsBtn.addEventListener("click", resetHints);
+  DOM.resetHintsBtn.addEventListener("click", () => {
+    resetHints();
+    saveProblemState();
+  });
   DOM.getHintBtn.disabled = true; // Until problem is loaded
 }
 
@@ -231,6 +267,7 @@ async function onGetHint() {
     renderHint(State.hintLevel);
     updateHintProgress();
     updateGetHintButton();
+    saveProblemState();
     return;
   }
 
@@ -267,6 +304,7 @@ async function fetchAllHints() {
     renderEdgeCases(State.hints.edge_cases || []);
     updateHintProgress();
     updateGetHintButton();
+    saveProblemState();
 
   } catch (err) {
     showError("hint", err.message);
@@ -386,6 +424,7 @@ async function sendChatMessage() {
   // Append user message
   appendChatMessage("user", query);
   State.chatHistory.push({ role: "user", content: query });
+  saveProblemState();
 
   setLoading(true, "chat");
 
@@ -401,6 +440,7 @@ async function sendChatMessage() {
     const aiText = response.result.text || "I'm not sure about that. Could you rephrase?";
     appendChatMessage("ai", aiText);
     State.chatHistory.push({ role: "assistant", content: aiText });
+    saveProblemState();
 
   } catch (err) {
     showError("chat", err.message);
@@ -624,4 +664,47 @@ function escapeHtml(str = "") {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+// ════════════════════════════════════════════════════════════
+// STATE PERSISTENCE
+// ════════════════════════════════════════════════════════════
+let hasRestoredState = false;
+
+function saveProblemState() {
+  if (!currentProblemUrl) return;
+  const stateToSave = {
+    hints: State.hints,
+    hintLevel: State.hintLevel,
+    chatHistory: State.chatHistory
+  };
+  chrome.storage.local.set({ [currentProblemUrl]: stateToSave });
+}
+
+async function restoreProblemState() {
+  if (!currentProblemUrl || hasRestoredState) return;
+  const data = await chrome.storage.local.get(currentProblemUrl);
+  const saved = data[currentProblemUrl];
+  if (saved) {
+    State.hints = saved.hints || null;
+    State.hintLevel = saved.hintLevel || 0;
+    if (State.hints && State.hintLevel > 0) {
+      DOM.hintsEmpty.classList.add("hidden");
+      renderEdgeCases(State.hints.edge_cases || []);
+      for (let i = 1; i <= State.hintLevel; i++) {
+        renderHint(i);
+      }
+      updateHintProgress();
+      updateGetHintButton();
+    }
+    if (saved.chatHistory && saved.chatHistory.length > 0) {
+      State.chatHistory = saved.chatHistory;
+      DOM.chatMessages.innerHTML = '<div class="chat-message ai"><div class="chat-sender">Coach</div><div class="chat-bubble">👋 Hey! I\'m your thinking coach. Ask me anything about this problem — I\'ll guide you to the solution without just handing it to you.</div></div>';
+      State.chatHistory.forEach(msg => {
+        const role = msg.role === 'user' ? 'user' : 'ai';
+        appendChatMessage(role, msg.content);
+      });
+    }
+  }
+  hasRestoredState = true;
 }
