@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeetCode Thinking Coach</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════
+       NOT ON LEETCODE STATE
+  ══════════════════════════════════════════════ -->
+  <div id="not-leetcode-view" class="not-leetcode hidden">
+    <div class="not-leetcode-icon">🧩</div>
+    <div class="not-leetcode-title">Wrong Page</div>
+    <div class="not-leetcode-text">
+      LeetCode Thinking Coach only works on LeetCode problem pages.
+      Navigate to a problem first!
+    </div>
+    <div class="not-leetcode-url">leetcode.com/problems/...</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       MAIN APP VIEW
+  ══════════════════════════════════════════════ -->
+  <div id="app-view">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">🧠</div>
+        <div>
+          <div class="header-title">Thinking Coach</div>
+          <div class="header-subtitle">Think deeper. Not faster.</div>
+        </div>
+      </div>
+      <div class="header-controls">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle" id="theme-toggle" title="Toggle dark/light mode">
+          <span class="toggle-icon" id="theme-icon">☀️</span>
+          <div class="toggle-track" id="toggle-track">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-dot" id="status-dot"></div>
+      <div class="status-text" id="status-text">Scanning page...</div>
+      <div class="problem-title" id="problem-title"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="hints">💡 Hints</button>
+      <button class="tab-btn" data-tab="chat">💬 Chat</button>
+      <button class="tab-btn" data-tab="solution">🔓 Solution</button>
+    </div>
+
+    <!-- ════════════ TAB: HINTS ════════════ -->
+    <div id="tab-hints" class="tab-content active">
+
+      <!-- Progress Bar -->
+      <div class="hint-progress">
+        <div class="hint-step" id="step-0" title="Direction"></div>
+        <div class="hint-step" id="step-1" title="Approach"></div>
+        <div class="hint-step" id="step-2" title="What Next"></div>
+        <div class="hint-step" id="step-3" title="Debug"></div>
+        <span class="hint-label" id="progress-label">0 / 4</span>
+      </div>
+
+      <!-- Error -->
+      <div class="error-banner hidden" id="hint-error">
+        <span>⚠️</span>
+        <span id="hint-error-text">Something went wrong. Please try again.</span>
+      </div>
+
+      <!-- Hint Cards Container -->
+      <div id="hint-cards-container">
+        <div class="empty-state" id="hints-empty">
+          <div class="empty-icon">💡</div>
+          <div class="empty-title">No hints yet</div>
+          <div class="empty-text">Click "Get Hint" to receive your first guided hint.</div>
+        </div>
+      </div>
+
+      <!-- Edge Cases -->
+      <div class="edge-cases-section hidden" id="edge-cases-section">
+        <div class="edge-cases-title">⚡ Edge Cases to Consider</div>
+        <div id="edge-cases-list"></div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="btn-row">
+        <button class="btn btn-primary" id="get-hint-btn">💡 Get Hint</button>
+        <button class="btn btn-secondary" id="reset-hints-btn">↺ Reset</button>
+      </div>
+
+    </div>
+
+    <!-- ════════════ TAB: CHAT ════════════ -->
+    <div id="tab-chat" class="tab-content">
+
+      <div class="chat-messages" id="chat-messages">
+        <!-- Welcome message -->
+        <div class="chat-message ai">
+          <div class="chat-sender">Coach</div>
+          <div class="chat-bubble">
+            👋 Hey! I'm your thinking coach. Ask me anything about this problem — I'll guide you to the solution without just handing it to you.
+          </div>
+        </div>
+      </div>
+
+      <div class="error-banner hidden" id="chat-error">
+        <span>⚠️</span>
+        <span id="chat-error-text">Something went wrong.</span>
+      </div>
+
+      <div class="chat-input-row">
+        <textarea
+          id="chat-input"
+          class="chat-input"
+          placeholder="Ask about the problem..."
+          rows="1"
+        ></textarea>
+        <button class="chat-send-btn" id="chat-send-btn" title="Send">➤</button>
+      </div>
+
+    </div>
+
+    <!-- ════════════ TAB: SOLUTION ════════════ -->
+    <div id="tab-solution" class="tab-content">
+
+      <!-- Warning (default) -->
+      <div class="solution-warning" id="solution-warning">
+        <div class="warning-icon">🔒</div>
+        <div class="warning-title">Full Solution</div>
+        <div class="warning-text">
+          You're about to see the complete solution with explanation and code.
+          This will bypass the learning process.<br /><br />
+          <strong>Are you sure you want to continue?</strong>
+        </div>
+        <div class="btn-row" style="justify-content: center;">
+          <button class="btn btn-danger" id="reveal-solution-btn" style="flex: none; padding: 9px 28px;">
+            🔓 Yes, Reveal Solution
+          </button>
+        </div>
+      </div>
+
+      <!-- Solution content (hidden by default) -->
+      <div class="solution-content" id="solution-content">
+
+        <div class="error-banner hidden" id="solution-error">
+          <span>⚠️</span>
+          <span id="solution-error-text">Something went wrong.</span>
+        </div>
+
+        <div id="solution-blocks">
+          <!-- Filled dynamically -->
+        </div>
+
+        <button class="btn btn-secondary btn-full mt-12" id="reset-solution-btn">
+          ↺ Lock Again
+        </button>
+
+      </div>
+
+    </div>
+
+  </div><!-- /#app-view -->
+
+  <script src="popup.js"></script>
+</body>
+</html>
