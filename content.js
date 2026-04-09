@@ -23,12 +23,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ── Main Extraction Logic ──────────────────────────────────
 function extractLeetCodeData() {
   return {
-    title:       extractTitle(),
+    title: extractTitle(),
     description: extractDescription(),
     constraints: extractConstraints(),
-    userCode:    extractUserCode(),
-    difficulty:  extractDifficulty(),
-    url:         window.location.href,
+    userCode: extractUserCode(),
+    difficulty: extractDifficulty(),
+    url: window.location.href,
   };
 }
 
@@ -121,7 +121,7 @@ function extractDifficulty() {
     const el = document.querySelector(sel);
     if (el && el.textContent.trim()) {
       const text = el.textContent.trim().toLowerCase();
-      if (['easy','medium','hard'].some(d => text.includes(d))) return el.textContent.trim();
+      if (['easy', 'medium', 'hard'].some(d => text.includes(d))) return el.textContent.trim();
     }
   }
 
